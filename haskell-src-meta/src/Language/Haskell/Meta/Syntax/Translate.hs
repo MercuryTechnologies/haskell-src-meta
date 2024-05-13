@@ -798,8 +798,14 @@ instance ToDecs (Exts.Decl l) where
   toDecs (Exts.InfixDecl l assoc Nothing ops) =
       toDecs (Exts.InfixDecl l assoc (Just 9) ops)
   toDecs (Exts.InfixDecl _ assoc (Just fixity) ops) =
-    map (\op -> TH.InfixD (TH.Fixity fixity dir) (toName op)) ops
+    map mkFixitySig ops
    where
+    mkFixitySig =
+#if __GLASGOW_HASKELL__ < 909
+      \op -> TH.InfixD (TH.Fixity fixity dir) (toName op)
+#else
+      \op -> TH.InfixD (TH.Fixity fixity dir) TH.NoNamespaceSpecifier (toName op)
+#endif
     dir = case assoc of
       Exts.AssocNone _  -> TH.InfixN
       Exts.AssocLeft _  -> TH.InfixL
